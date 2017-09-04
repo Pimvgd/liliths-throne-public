@@ -16,6 +16,7 @@ import com.base.game.character.gender.AndrogynousIdentification;
 import com.base.game.character.gender.Gender;
 import com.base.game.character.gender.GenderPreference;
 import com.base.game.character.gender.GenderPronoun;
+import com.base.game.character.npc.NPC;
 import com.base.game.character.race.FurryPreference;
 import com.base.game.character.race.Race;
 import com.base.game.character.race.RaceStage;
@@ -444,8 +445,15 @@ public class OptionsDialogue {
 					return new ResponseEffectsOnly("Export character", "Exports your character file to the 'data/characters/' folder."){
 						@Override
 						public void effects() {
-							CharacterUtils.saveCharacterAsXML(Main.game.getPlayer());
+							long startTime = System.nanoTime();
+							for (NPC n : Main.game.getNPCList()) {
+								CharacterUtils.saveCharacterAsJSON(n);
+							}
+							//Main.game.getNPCList().stream().forEach();
+							CharacterUtils.saveCharacterAsJSON(Main.game.getPlayer());
 							Main.game.flashMessage(Colour.GENERIC_GOOD, "Character exported!");
+							long endTime = System.nanoTime() - startTime;
+							System.out.println(endTime);
 							
 						}
 					};

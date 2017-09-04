@@ -1,6 +1,9 @@
 package com.base.game.character;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +20,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
@@ -86,10 +91,476 @@ import com.base.world.places.Dominion;
  */
 public class CharacterUtils {
 	
+	public static void saveCharacterAsJSON(GameCharacter character){
+		try {
+			Object doc = null;
+			//long timeStart = System.nanoTime();
+			//System.out.println(timeStart);
+			
+			JSONObject root = new JSONObject();
+		
+			JSONObject properties = new JSONObject();
+			root.put("character", properties);
+
+			// GameCharacter class:
+			
+			// Core information:
+			JSONObject characterCoreInfo = new JSONObject();//doc.createElement("core");
+			properties.put("core", characterCoreInfo);
+			characterCoreInfo.put("name", character.getName());
+			characterCoreInfo.put("level", String.valueOf(character.getLevel()));
+			characterCoreInfo.put("version", Main.VERSION_NUMBER);
+			characterCoreInfo.put("sexualOrientation", String.valueOf(character.getSexualOrientation()));
+			
+			// Attributes:
+			JSONArray characterCoreAttributes = new JSONArray();//doc.createElement("attributes");
+			properties.put("attributes", characterCoreAttributes);
+			for(Attribute att : Attribute.values()){
+				JSONObject element = new JSONObject();//doc.createElement("attribute");
+				characterCoreAttributes.put(element);
+				
+				addAttributeJSON(doc, element, "type", att.toString());
+				addAttributeJSON(doc, element, "value", String.valueOf(character.getBaseAttributeValue(att)));
+			}
+			
+			// Perks:
+			JSONArray characterPerks = new JSONArray();//doc.createElement("perks");
+			properties.put("perks", characterPerks);
+			for(Perk p : Perk.values()){
+				JSONObject element = new JSONObject();//doc.createElement("perk");
+				characterPerks.put(element);
+				
+				addAttributeJSON(doc, element, "type", p.toString());
+				addAttributeJSON(doc, element, "value", String.valueOf(character.hasPerk(p)));
+			}
+			
+			// Fetishes:
+			JSONArray characterFetishes = new JSONArray();//doc.createElement("fetishes");
+			properties.put("fetishes", characterFetishes);
+			for(Fetish f : Fetish.values()){
+				JSONObject element = new JSONObject();//doc.createElement("fetish");
+				characterFetishes.put(element);
+				
+				addAttributeJSON(doc, element, "type", f.toString());
+				addAttributeJSON(doc, element, "value", String.valueOf(character.hasFetish(f)));
+			}
+			
+			// Status effects:
+			JSONArray characterStatusEffects = new JSONArray();//doc.createElement("statusEffects");
+			properties.put("statusEffects", characterStatusEffects);
+			for(StatusEffect se : character.getStatusEffects()){
+				JSONObject element = new JSONObject();//doc.createElement("statusEffect");
+				characterStatusEffects.put(element);
+				
+				addAttributeJSON(doc, element, "type", se.toString());
+				addAttributeJSON(doc, element, "value", String.valueOf(character.getStatusEffectDuration(se)));
+			}
+			
+			// Combat (spells and special attacks):
+			JSONArray characterCombat = new JSONArray();//doc.createElement("combat");
+			properties.put("combat", characterCombat);
+			for(Spell s : Spell.values()){
+				JSONObject element = new JSONObject();//doc.createElement("spell");
+				characterCombat.put(element);
+				
+				addAttributeJSON(doc, element, "type", s.toString());
+				addAttributeJSON(doc, element, "attackType", "spell");
+
+				addAttributeJSON(doc, element, "value", String.valueOf(character.getSpells().contains(s)));
+			}
+			for(SpecialAttack sa : SpecialAttack.values()){
+				JSONObject element = new JSONObject();//doc.createElement("specialAttack");
+				characterCombat.put(element);
+				
+				addAttributeJSON(doc, element, "type", sa.toString());
+				addAttributeJSON(doc, element, "attackType", "specialAttack");
+				addAttributeJSON(doc, element, "value", String.valueOf(character.getSpecialAttacks().contains(sa)));
+			}
+			
+			// Pregnancy: TODO
+//			Element characterPregnancy = doc.createElement("pregnancy");
+//			properties.put("", characterPregnancy);
+//			
+//			Element characterPregnancyPossibility = doc.createElement("pregnancyPossibilities");
+//			characterPregnancy.put("", characterPregnancyPossibility);
+//			for(PregnancyPossibility pregPoss : character.getPotentialPartnersAsMother()) {
+//				Element element = doc.createElement("possibility");
+//				characterPregnancyPossibility.put("", element);
+//				
+////				addAttributeJSON(doc, element, "fatherName", pregPoss.getFatherName());
+////				addAttributeJSON(doc, element, "gender", pregPoss.getGender().toString());
+////				addAttributeJSON(doc, element, "race", pregPoss.getRace().toString());
+////				addAttributeJSON(doc, element, "raceStage", pregPoss.getRaceStage().toString());
+//				addAttributeJSON(doc, element, "probability", String.valueOf(pregPoss.getProbability()));
+//			}
+//			
+//			Element characterPregnancyCurrentLitter = doc.createElement("pregnantLitter");
+//			characterPregnancy.put("", characterPregnancyCurrentLitter);
+//			if (character.getPregnantLitter() != null) {
+//				Element element = doc.createElement("litter");
+//				characterPregnancyCurrentLitter.put("", element);
+//
+//				addAttributeJSON(doc, element, "dayOfConception", String.valueOf(character.getPregnantLitter().getDayOfBirth()));
+//				addAttributeJSON(doc, element, "dayOfBirth", String.valueOf(character.getPregnantLitter().getDayOfBirth()));
+////				addAttributeJSON(doc, element, "fatherName", character.getPregnantLitter().getPartner().getName("a"));
+////				addAttributeJSON(doc, element, "race", character.getPregnantLitter().getRace().toString());
+//				addAttributeJSON(doc, element, "sons", String.valueOf(character.getPregnantLitter().getSons()));
+//				addAttributeJSON(doc, element, "daughters", String.valueOf(character.getPregnantLitter().getDaughters()));
+//			}
+//			
+//			Element characterPregnancyBirthedLitters = doc.createElement("birthedLitters");
+//			characterPregnancy.put("", characterPregnancyBirthedLitters);
+//			for(Litter litter : character.getLittersBirthed()) {
+//				Element element = doc.createElement("birthedLitter");
+//				characterPregnancyBirthedLitters.put("", element);
+//
+//				addAttributeJSON(doc, element, "dayOfConception", String.valueOf(litter.getDayOfBirth()));
+//				addAttributeJSON(doc, element, "dayOfBirth", String.valueOf(litter.getDayOfBirth()));
+////				addAttributeJSON(doc, element, "fatherName", litter.getPartner().getName("a"));
+////				addAttributeJSON(doc, element, "race", litter.getRace().toString());
+//				addAttributeJSON(doc, element, "sons", String.valueOf(litter.getSons()));
+//				addAttributeJSON(doc, element, "daughters", String.valueOf(litter.getDaughters()));
+//			}
+			
+			// Body (oh here's the fun one...)
+			JSONObject characterBody = new JSONObject();//doc.createElement("body");
+			properties.put("body", characterBody);
+			
+			// Core:
+			JSONObject bodyCore = new JSONObject();//doc.createElement("bodyCore");
+			characterBody.put("bodyCore", bodyCore);
+			addAttributeJSON(doc, bodyCore, "piercedStomach", String.valueOf(character.isPiercedNavel()));
+			addAttributeJSON(doc, bodyCore, "height", String.valueOf(character.getRawHeightValue()));
+			addAttributeJSON(doc, bodyCore, "femininity", String.valueOf(character.getFemininity()));
+			addAttributeJSON(doc, bodyCore, "bodySize", String.valueOf(character.getBodySizeValue()));
+			addAttributeJSON(doc, bodyCore, "muscle", String.valueOf(character.getMuscleValue()));
+			addAttributeJSON(doc, bodyCore, "pubicHair", String.valueOf(character.getPubicHair()));
+			
+			JSONArray bodyCoverings = new JSONArray();
+			bodyCore.put("bodyCovering", bodyCoverings);
+			
+			for(BodyCoveringType bct : BodyCoveringType.values()) {
+				JSONObject element = new JSONObject();//doc.createElement("bodyCovering");
+				bodyCoverings.put(element);
+				
+				addAttributeJSON(doc, element, "type", bct.toString());
+				addAttributeJSON(doc, element, "pattern", character.getCovering(bct).getPattern().toString());
+				addAttributeJSON(doc, element, "colourPrimary", character.getCovering(bct).getPrimaryColour().toString());
+				addAttributeJSON(doc, element, "glowPrimary", String.valueOf(character.getCovering(bct).isPrimaryGlowing()));
+				addAttributeJSON(doc, element, "colourSecondary", character.getCovering(bct).getSecondaryColour().toString());
+				addAttributeJSON(doc, element, "glowSecondary", String.valueOf(character.getCovering(bct).isSecondaryGlowing()));
+				addAttributeJSON(doc, element, "discovered", String.valueOf(character.getBodyCoveringTypesDiscovered().contains(bct)));
+			}
+			
+
+			// Antennae:
+			JSONObject bodyAntennae = new JSONObject();//doc.createElement("antennae");
+			characterBody.put("antennae", bodyAntennae);
+				addAttributeJSON(doc, bodyAntennae, "type", character.getAntennaType().toString());
+				addAttributeJSON(doc, bodyAntennae, "rows", String.valueOf(character.getAntennaRows()));
+			
+			// Arm:
+			JSONObject bodyArm = new JSONObject();//doc.createElement("arm");
+			characterBody.put("arm", bodyArm);
+				addAttributeJSON(doc, bodyArm, "type", character.getArmType().toString());
+				addAttributeJSON(doc, bodyArm, "rows", String.valueOf(character.getArmRows()));
+				addAttributeJSON(doc, bodyArm, "underarmHair", character.getUnderarmHair().toString());
+			
+			// Ass:
+			JSONObject bodyAss = new JSONObject();//doc.createElement("ass");
+			characterBody.put("ass", bodyAss);
+				addAttributeJSON(doc, bodyAss, "type", character.getAssType().toString());
+				addAttributeJSON(doc, bodyAss, "assSize", String.valueOf(character.getAssSize().getValue()));
+				addAttributeJSON(doc, bodyAss, "hipSize", String.valueOf(character.getHipSize().getValue()));
+
+			JSONObject bodyAnus = new JSONObject();//doc.createElement("anus");
+			characterBody.put("anus", bodyAnus);
+				addAttributeJSON(doc, bodyAnus, "wetness", String.valueOf(character.getAssWetness().getValue()));
+				addAttributeJSON(doc, bodyAnus, "elasticity", String.valueOf(character.getAssElasticity().getValue()));
+				addAttributeJSON(doc, bodyAnus, "plasticity", String.valueOf(character.getAssPlasticity().getValue()));
+				addAttributeJSON(doc, bodyAnus, "capacity", String.valueOf(character.getAssRawCapacityValue()));
+				addAttributeJSON(doc, bodyAnus, "stretchedCapacity", String.valueOf(character.getAssStretchedCapacity()));
+				addAttributeJSON(doc, bodyAnus, "virgin", String.valueOf(character.isAssVirgin()));
+				addAttributeJSON(doc, bodyAnus, "bleached", String.valueOf(character.isAssBleached()));
+				addAttributeJSON(doc, bodyAnus, "assHair", character.getAssHair().toString());
+				JSONObject anusModifiers = new JSONObject();//doc.createElement("anusModifiers");
+				bodyAnus.put("anusModifiers", anusModifiers);
+				for(OrificeModifier om : OrificeModifier.values()) {
+					addAttributeJSON(doc, anusModifiers, om.toString(), String.valueOf(character.hasAssOrificeModifier(om)));
+				}
+			
+			// Breasts:
+				JSONObject bodyBreast = new JSONObject();//doc.createElement("breasts");
+			characterBody.put("breasts", bodyBreast);
+				addAttributeJSON(doc, bodyBreast, "type", character.getBreastType().toString());
+				addAttributeJSON(doc, bodyBreast, "size", String.valueOf(character.getBreastSize().getMeasurement()));
+				addAttributeJSON(doc, bodyBreast, "rows", String.valueOf(character.getBreastRows()));
+				addAttributeJSON(doc, bodyBreast, "lactation", String.valueOf(character.getBreastRawLactationValue()));
+				addAttributeJSON(doc, bodyBreast, "nippleCountPerBreast", String.valueOf(character.getNippleCountPerBreast()));
+
+				JSONObject bodyNipple = new JSONObject();//doc.createElement("nipples");
+			characterBody.put("nipples", bodyNipple);
+				addAttributeJSON(doc, bodyNipple, "elasticity", String.valueOf(character.getNippleElasticity().getValue()));
+				addAttributeJSON(doc, bodyNipple, "plasticity", String.valueOf(character.getNipplePlasticity().getValue()));
+				addAttributeJSON(doc, bodyNipple, "capacity", String.valueOf(character.getNippleRawCapacityValue()));
+				addAttributeJSON(doc, bodyNipple, "stretchedCapacity", String.valueOf(character.getNippleStretchedCapacity()));
+				addAttributeJSON(doc, bodyNipple, "virgin", String.valueOf(character.isNippleVirgin()));
+				addAttributeJSON(doc, bodyNipple, "pierced", String.valueOf(character.isPiercedNipple()));
+				addAttributeJSON(doc, bodyNipple, "nippleSize", String.valueOf(character.getNippleSize().getValue()));
+				addAttributeJSON(doc, bodyNipple, "nippleShape", String.valueOf(character.getNippleShape()));
+				addAttributeJSON(doc, bodyNipple, "areolaeSize", String.valueOf(character.getAreolaeSize().getValue()));
+				addAttributeJSON(doc, bodyNipple, "areolaeShape", String.valueOf(character.getAreolaeShape()));
+				JSONObject nippleModifiers = new JSONObject();//doc.createElement("nippleModifiers");
+				bodyNipple.put("nippleModifiers", nippleModifiers);
+				for(OrificeModifier om : OrificeModifier.values()) {
+					addAttributeJSON(doc, nippleModifiers, om.toString(), String.valueOf(character.hasNippleOrificeModifier(om)));
+				}
+				
+				JSONObject bodyMilk = new JSONObject();//doc.createElement("milk");
+			characterBody.put("milk", bodyMilk);
+				addAttributeJSON(doc, bodyMilk, "flavour", String.valueOf(character.getMilkFlavour()));
+				JSONObject milkModifiers = new JSONObject();//doc.createElement("milkModifiers");
+				bodyMilk.put("milkModifiers", milkModifiers);
+				for(FluidModifier fm : FluidModifier.values()) {
+					addAttributeJSON(doc, milkModifiers, fm.toString(), String.valueOf(character.hasMilkModifier(fm)));
+				}
+				//TODO transformativeEffects;
+				
+				
+			// Ear:
+				JSONObject bodyEar = new JSONObject();//doc.createElement("ear");
+			characterBody.put("ear", bodyEar);
+				addAttributeJSON(doc, bodyEar, "type", character.getEarType().toString());
+				addAttributeJSON(doc, bodyEar, "pierced", String.valueOf(character.isPiercedEar()));
+
+			// Eye:
+				JSONObject bodyEye = new JSONObject();//doc.createElement("eye");
+			characterBody.put("eye", bodyEye);
+				addAttributeJSON(doc, bodyEye, "type", character.getEyeType().toString());
+				addAttributeJSON(doc, bodyEye, "eyePairs", String.valueOf(character.getEyePairs()));
+				addAttributeJSON(doc, bodyEye, "irisShape", character.getIrisShape().toString());
+				addAttributeJSON(doc, bodyEye, "pupilShape", character.getPupilShape().toString());
+			
+			// Face:
+				JSONObject bodyFace = new JSONObject();//doc.createElement("face");
+			characterBody.put("face", bodyFace);
+				addAttributeJSON(doc, bodyFace, "type", character.getFaceType().toString());
+				addAttributeJSON(doc, bodyFace, "piercedNose", String.valueOf(character.isPiercedNose()));
+				addAttributeJSON(doc, bodyFace, "facialHair", character.getFacialHair().toString());
+
+				JSONObject bodyMouth = new JSONObject();//doc.createElement("mouth");
+			characterBody.put("mouth", bodyMouth);
+				addAttributeJSON(doc, bodyMouth, "elasticity", String.valueOf(character.getFaceElasticity().getValue()));
+				addAttributeJSON(doc, bodyMouth, "plasticity", String.valueOf(character.getFacePlasticity().getValue()));
+				addAttributeJSON(doc, bodyMouth, "capacity", String.valueOf(character.getFaceRawCapacityValue()));
+				addAttributeJSON(doc, bodyMouth, "stretchedCapacity", String.valueOf(character.getFaceStretchedCapacity()));
+				addAttributeJSON(doc, bodyMouth, "virgin", String.valueOf(character.isFaceVirgin()));
+				addAttributeJSON(doc, bodyMouth, "piercedLip", String.valueOf(character.isPiercedLip()));
+				addAttributeJSON(doc, bodyMouth, "lipSize", String.valueOf(character.getLipSizeValue()));
+				JSONObject mouthModifiers = new JSONObject();//doc.createElement("mouthModifiers");
+				bodyMouth.put("mouthModifiers", mouthModifiers);
+				for(OrificeModifier om : OrificeModifier.values()) {
+					addAttributeJSON(doc, mouthModifiers, om.toString(), String.valueOf(character.hasFaceOrificeModifier(om)));
+				}
+				
+				JSONObject bodyTongue = new JSONObject();//doc.createElement("tongue");
+			characterBody.put("tongue", bodyTongue);
+				addAttributeJSON(doc, bodyTongue, "piercedTongue", String.valueOf(character.isPiercedTongue()));
+				addAttributeJSON(doc, bodyTongue, "tongueLength", String.valueOf(character.getTongueLengthValue()));
+				JSONObject tongueModifiers = new JSONObject();//doc.createElement("tongueModifiers");
+				bodyTongue.put("tongueModifiers", tongueModifiers);
+				for(TongueModifier tm : TongueModifier.values()) {
+					addAttributeJSON(doc, tongueModifiers, tm.toString(), String.valueOf(character.hasTongueModifier(tm)));
+				}
+				
+			
+			// Hair:
+				JSONObject bodyHair = new JSONObject();//doc.createElement("hair");
+			characterBody.put("hair", bodyHair);
+				addAttributeJSON(doc, bodyHair, "type", character.getHairType().toString());
+				addAttributeJSON(doc, bodyHair, "length", String.valueOf(character.getHairRawLengthValue()));
+				addAttributeJSON(doc, bodyHair, "hairStyle", character.getHairStyle().toString());
+			
+			// Horn:
+				JSONObject bodyHorn = new JSONObject();//doc.createElement("horn");
+			characterBody.put("horn", bodyHorn);
+				addAttributeJSON(doc, bodyHorn, "type", character.getHornType().toString());
+				addAttributeJSON(doc, bodyHorn, "rows", String.valueOf(character.getHornRows()));
+			
+			// Leg:
+				JSONObject bodyLeg = new JSONObject();//doc.createElement("leg");
+			characterBody.put("leg", bodyLeg);
+				addAttributeJSON(doc, bodyLeg, "type", character.getLegType().toString());
+			
+			// Penis:
+				JSONObject bodyPenis = new JSONObject();//doc.createElement("penis");
+			characterBody.put("penis", bodyPenis);
+				addAttributeJSON(doc, bodyPenis, "type", character.getPenisType().toString());
+				addAttributeJSON(doc, bodyPenis, "size", String.valueOf(character.getPenisRawSizeValue()));
+				addAttributeJSON(doc, bodyPenis, "pierced", String.valueOf(character.isPiercedPenis()));
+				JSONObject penisModifiers = new JSONObject();//doc.createElement("penisModifiers");
+				bodyPenis.put("penisModifiers", penisModifiers);
+				for(PenisModifier pm : PenisModifier.values()) {
+					addAttributeJSON(doc, penisModifiers, pm.toString(), String.valueOf(character.hasPenisModifier(pm)));
+				}
+				addAttributeJSON(doc, bodyPenis, "elasticity", String.valueOf(character.getUrethraElasticity().getValue()));
+				addAttributeJSON(doc, bodyPenis, "plasticity", String.valueOf(character.getUrethraPlasticity().getValue()));
+				addAttributeJSON(doc, bodyPenis, "capacity", String.valueOf(character.getPenisRawCapacityValue()));
+				addAttributeJSON(doc, bodyPenis, "stretchedCapacity", String.valueOf(character.getPenisStretchedCapacity()));
+				addAttributeJSON(doc, bodyPenis, "virgin", String.valueOf(character.isUrethraVirgin()));
+				JSONObject urethraModifiers = new JSONObject();//doc.createElement("urethraModifiers");
+				bodyPenis.put("urethraModifiers", urethraModifiers);
+				for(OrificeModifier om : OrificeModifier.values()) {
+					addAttributeJSON(doc, urethraModifiers, om.toString(), String.valueOf(character.hasUrethraOrificeModifier(om)));
+				}
+				
+				JSONObject bodyTesticle = new JSONObject();//doc.createElement("testicles");
+			characterBody.put("testicles", bodyTesticle);
+				addAttributeJSON(doc, bodyTesticle, "testicleSize", String.valueOf(character.getTesticleSize().getValue()));
+				addAttributeJSON(doc, bodyTesticle, "cumProduction", String.valueOf(character.getPenisRawCumProductionValue()));
+				addAttributeJSON(doc, bodyTesticle, "numberOfTesticles", String.valueOf(character.getPenisNumberOfTesticles()));
+				addAttributeJSON(doc, bodyTesticle, "internal", String.valueOf(character.isInternalTesticles()));
+			
+				JSONObject bodyCum = new JSONObject();//doc.createElement("cum");
+			characterBody.put("cum", bodyCum);
+				addAttributeJSON(doc, bodyCum, "flavour", String.valueOf(character.getMilkFlavour()));
+				JSONObject cumModifiers = new JSONObject();//doc.createElement("cumModifiers");
+				bodyCum.put("cumModifiers", cumModifiers);
+				for(FluidModifier fm : FluidModifier.values()) {
+					addAttributeJSON(doc, cumModifiers, fm.toString(), String.valueOf(character.hasCumModifier(fm)));
+				}
+				//TODO transformativeEffects;
+			
+			
+			// Skin:
+				JSONObject bodySkin = new JSONObject();//doc.createElement("skin");
+			characterBody.put("skin", bodySkin);
+				addAttributeJSON(doc, bodySkin, "type", character.getSkinType().toString());
+			
+			// Tail:
+				JSONObject bodyTail = new JSONObject();//doc.createElement("tail");
+			characterBody.put("tail", bodyTail);
+				addAttributeJSON(doc, bodyTail, "type", character.getTailType().toString());
+				addAttributeJSON(doc, bodyTail, "count", String.valueOf(character.getTailCount()));
+			
+			// Vagina:TODO
+				JSONObject bodyVagina = new JSONObject();//doc.createElement("vagina");
+			characterBody.put("vagina", bodyVagina);
+				addAttributeJSON(doc, bodyVagina, "type", character.getVaginaType().toString());
+				addAttributeJSON(doc, bodyVagina, "clitSize", String.valueOf(character.getVaginaRawClitorisSizeValue()));
+				addAttributeJSON(doc, bodyVagina, "pierced", String.valueOf(character.isPiercedVagina()));
+				
+				addAttributeJSON(doc, bodyVagina, "wetness", String.valueOf(character.getVaginaWetness().getValue()));
+				addAttributeJSON(doc, bodyVagina, "elasticity", String.valueOf(character.getVaginaElasticity().getValue()));
+				addAttributeJSON(doc, bodyVagina, "plasticity", String.valueOf(character.getVaginaPlasticity().getValue()));
+				addAttributeJSON(doc, bodyVagina, "capacity", String.valueOf(character.getVaginaRawCapacityValue()));
+				addAttributeJSON(doc, bodyVagina, "stretchedCapacity", String.valueOf(character.getVaginaStretchedCapacity()));
+				addAttributeJSON(doc, bodyVagina, "virgin", String.valueOf(character.isVaginaVirgin()));
+				
+				JSONObject bodyGirlcum = new JSONObject();//doc.createElement("girlcum");
+			characterBody.put("girlcum", bodyGirlcum);
+				addAttributeJSON(doc, bodyGirlcum, "flavour", String.valueOf(character.getGirlcumFlavour()));
+				JSONObject girlcumModifiers = new JSONObject();//doc.createElement("girlcumModifiers");
+				bodyGirlcum.put("girlcumModifiers", girlcumModifiers);
+				for(FluidModifier fm : FluidModifier.values()) {
+					addAttributeJSON(doc, girlcumModifiers, fm.toString(), String.valueOf(character.hasGirlcumModifier(fm)));
+				}
+				//TODO transformativeEffects;
+				
+			
+			// Wing:
+				JSONObject bodyWing = new JSONObject();//doc.createElement("wing");
+			characterBody.put("wing", bodyWing);
+			addAttributeJSON(doc, bodyWing, "type", character.getWingType().toString());
+
+			//System.out.println("Difference1: "+(System.nanoTime()-timeStart)/1000000000f);
+			
+			// PlayerCharacter specific:
+			
+			// Core:
+			JSONObject characterPlayerCoreInfo = new JSONObject();//doc.createElement("playerCore");
+			properties.put("playerCore", characterPlayerCoreInfo);
+			
+			characterPlayerCoreInfo.put("experience", String.valueOf((character).getExperience()));
+			characterPlayerCoreInfo.put("levelUpPoints", String.valueOf((character).getLevelUpPoints()));
+			characterPlayerCoreInfo.put("perkPoints", String.valueOf((character).getPerkPoints()));
+			
+			// Sex stats:
+			JSONObject characterSexStats = new JSONObject();//doc.createElement("sexStats");
+			properties.put("sexStats", characterSexStats);
+			
+			JSONArray characterCumCount = new JSONArray();//doc.createElement("cumCounts");
+			characterSexStats.put("cumCounts", characterCumCount);
+			for(PenetrationType pt : PenetrationType.values()) {
+				for(OrificeType ot : OrificeType.values()) {
+					JSONObject element = new JSONObject();//doc.createElement("cumCount");
+					characterCumCount.put(element);
+					
+					addAttributeJSON(doc, element, "penetrationType", pt.toString());
+					addAttributeJSON(doc, element, "orificeType", ot.toString());
+					addAttributeJSON(doc, element, "count", String.valueOf((character).getCumCount(new SexType(pt, ot))));
+				}
+			}
+
+			JSONArray characterSexCount = new JSONArray();//doc.createElement("sexCounts");
+			characterSexStats.put("sexCounts", characterSexCount);
+			for(PenetrationType pt : PenetrationType.values()) {
+				for(OrificeType ot : OrificeType.values()) {
+					JSONObject element = new JSONObject();//doc.createElement("sexCount");
+					characterSexCount.put(element);
+					
+					addAttributeJSON(doc, element, "penetrationType", pt.toString());
+					addAttributeJSON(doc, element, "orificeType", ot.toString());
+					addAttributeJSON(doc, element, "count", String.valueOf((character).getSexCount(new SexType(pt, ot))));
+				}
+			}
+
+			JSONArray characterVirginityTakenBy = new JSONArray();//doc.createElement("virginityTakenBy");
+			characterSexStats.put("virginityTakenBy", characterVirginityTakenBy);
+			for(PenetrationType pt : PenetrationType.values()) {
+				for(OrificeType ot : OrificeType.values()) {
+					if((character).getVirginityLoss(new SexType(pt, ot))!=null) {
+						JSONObject element = new JSONObject();//doc.createElement("virginity");
+						characterVirginityTakenBy.put(element);
+						
+						addAttributeJSON(doc, element, "penetrationType", pt.toString());
+						addAttributeJSON(doc, element, "orificeType", ot.toString());
+						addAttributeJSON(doc, element, "takenBy", String.valueOf((character).getVirginityLoss(new SexType(pt, ot))));
+					}
+				}
+			}
+			
+			File dir = new File("data/");
+			dir.mkdir();
+			
+			File dirCharacter = new File("data/characters/");
+			dirCharacter.mkdir();
+			
+			int saveNumber = 0;
+			String saveLocation = "data/characters/"+character.getName()+"_day"+Main.game.getDayNumber()+".xml";
+			if(new File("data/characters/"+character.getName()+"_day"+Main.game.getDayNumber()+".xml").exists())
+				saveLocation = "data/characters/"+character.getName()+"_day"+Main.game.getDayNumber()+"("+saveNumber+").xml";
+
+			while(new File("data/characters/"+character.getName()+"_day"+Main.game.getDayNumber()+"("+saveNumber+").xml").exists()) {
+				saveNumber++;
+				saveLocation = "data/characters/"+character.getName()+"_day"+Main.game.getDayNumber()+"("+saveNumber+").xml";
+			}
+			
+			File f = new File(saveLocation);
+			PrintWriter bf = new PrintWriter(f);
+			bf.write(root.toString());
+			bf.close();
+		
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	public static void saveCharacterAsXML(GameCharacter character){
 		try {
-			long timeStart = System.nanoTime();
-			System.out.println(timeStart);
+			//long timeStart = System.nanoTime();
+			//System.out.println(timeStart);
 		
 			DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -465,16 +936,16 @@ public class CharacterUtils {
 			characterBody.appendChild(bodyWing);
 			addAttribute(doc, bodyWing, "type", character.getWingType().toString());
 
-			System.out.println("Difference1: "+(System.nanoTime()-timeStart)/1000000000f);
+			//System.out.println("Difference1: "+(System.nanoTime()-timeStart)/1000000000f);
 			
 			// PlayerCharacter specific:
 			
 			// Core:
 			Element characterPlayerCoreInfo = doc.createElement("playerCore");
 			properties.appendChild(characterPlayerCoreInfo);
-			createXMLElementWithValue(doc, characterPlayerCoreInfo, "experience", String.valueOf(((PlayerCharacter)character).getExperience()));
-			createXMLElementWithValue(doc, characterPlayerCoreInfo, "levelUpPoints", String.valueOf(((PlayerCharacter)character).getLevelUpPoints()));
-			createXMLElementWithValue(doc, characterPlayerCoreInfo, "perkPoints", String.valueOf(((PlayerCharacter)character).getPerkPoints()));
+			createXMLElementWithValue(doc, characterPlayerCoreInfo, "experience", String.valueOf((character).getExperience()));
+			createXMLElementWithValue(doc, characterPlayerCoreInfo, "levelUpPoints", String.valueOf((character).getLevelUpPoints()));
+			createXMLElementWithValue(doc, characterPlayerCoreInfo, "perkPoints", String.valueOf((character).getPerkPoints()));
 			
 			// Sex stats:
 			Element characterSexStats = doc.createElement("sexStats");
@@ -489,7 +960,7 @@ public class CharacterUtils {
 					
 					addAttribute(doc, element, "penetrationType", pt.toString());
 					addAttribute(doc, element, "orificeType", ot.toString());
-					addAttribute(doc, element, "count", String.valueOf(((PlayerCharacter)character).getCumCount(new SexType(pt, ot))));
+					addAttribute(doc, element, "count", String.valueOf((character).getCumCount(new SexType(pt, ot))));
 				}
 			}
 
@@ -502,7 +973,7 @@ public class CharacterUtils {
 					
 					addAttribute(doc, element, "penetrationType", pt.toString());
 					addAttribute(doc, element, "orificeType", ot.toString());
-					addAttribute(doc, element, "count", String.valueOf(((PlayerCharacter)character).getSexCount(new SexType(pt, ot))));
+					addAttribute(doc, element, "count", String.valueOf((character).getSexCount(new SexType(pt, ot))));
 				}
 			}
 
@@ -510,34 +981,16 @@ public class CharacterUtils {
 			characterSexStats.appendChild(characterVirginityTakenBy);
 			for(PenetrationType pt : PenetrationType.values()) {
 				for(OrificeType ot : OrificeType.values()) {
-					if(((PlayerCharacter)character).getVirginityLoss(new SexType(pt, ot))!=null) {
+					if((character).getVirginityLoss(new SexType(pt, ot))!=null) {
 						Element element = doc.createElement("virginity");
 						characterVirginityTakenBy.appendChild(element);
 						
 						addAttribute(doc, element, "penetrationType", pt.toString());
 						addAttribute(doc, element, "orificeType", ot.toString());
-						addAttribute(doc, element, "takenBy", String.valueOf(((PlayerCharacter)character).getVirginityLoss(new SexType(pt, ot))));
+						addAttribute(doc, element, "takenBy", String.valueOf((character).getVirginityLoss(new SexType(pt, ot))));
 					}
 				}
 			}
-			
-
-			System.out.println("Difference2: "+(System.nanoTime()-timeStart)/1000000000f);
-			
-			TransformerFactory tf = TransformerFactory.newInstance();
-			Transformer transformer1 = tf.newTransformer();
-			transformer1.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			StringWriter writer = new StringWriter();
-
-			System.out.println("Difference3: "+(System.nanoTime()-timeStart)/1000000000f);
-			
-			transformer1.transform(new DOMSource(doc), new StreamResult(writer));
-			
-			System.out.println("Difference4: "+(System.nanoTime()-timeStart)/1000000000f);
-			
-			String output = writer.getBuffer().toString();
-			System.out.println("Difference: "+(System.nanoTime()-timeStart)/1000000000f);
-			System.out.println(output);
 			
 			// Save this xml:
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -579,6 +1032,10 @@ public class CharacterUtils {
 		Attr attr = doc.createAttribute("value");
 		attr.setValue(value);
 		element.setAttributeNode(attr);
+	}
+	
+	private static void addAttributeJSON(Object doc, JSONObject parentElement, String attributeName, String value){
+		parentElement.put(attributeName, value);
 	}
 	
 	private static void addAttribute(Document doc, Element parentElement, String attributeName, String value){
