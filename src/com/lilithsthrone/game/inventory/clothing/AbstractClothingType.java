@@ -266,7 +266,7 @@ public abstract class AbstractClothingType extends AbstractCoreType {
 			"<rarity>"+rarity+"</rarity> "+
 			"<clothingSet/> "+
 			"<imageName>"+pathName+"</imageName> "+
-			"<imageEquippedName>"+pathNameEquipped+"</imageEquippedName> "+
+			(pathNameEquipped != null ? "<imageEquippedName>"+pathNameEquipped+"</imageEquippedName> " : "<imageEquippedName/> ")+
 			"<enchantmentLimit/>"+
 			"<effects/>"+
 			getBlockedPartsXML() +
