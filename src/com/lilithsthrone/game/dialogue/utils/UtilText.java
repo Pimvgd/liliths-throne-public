@@ -554,11 +554,13 @@ public class UtilText {
 	}
 	
 	public static String parse(GameCharacter specialNPC, String input) {
-		return parse(Util.newArrayListOfValues(specialNPC), input);
+		return input;
+		//return parse(Util.newArrayListOfValues(specialNPC), input);
 	}
 	
 	public static String parse(GameCharacter specialNPC1, GameCharacter specialNPC2, String input) {
-		return parse(Util.newArrayListOfValues(specialNPC1, specialNPC2), input);
+		return input;
+		//return parse(Util.newArrayListOfValues(specialNPC1, specialNPC2), input);
 	}
 	
 	/**

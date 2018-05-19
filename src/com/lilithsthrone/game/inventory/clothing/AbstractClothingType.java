@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -21,7 +22,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.lilithsthrone.game.character.GameCharacter;
+import com.lilithsthrone.game.character.PlayerCharacter;
+import com.lilithsthrone.game.character.body.CoverableArea;
 import com.lilithsthrone.game.character.body.valueEnums.Femininity;
+import com.lilithsthrone.game.character.npc.NPC;
 import com.lilithsthrone.game.dialogue.utils.UtilText;
 import com.lilithsthrone.game.inventory.AbstractCoreType;
 import com.lilithsthrone.game.inventory.InventorySlot;
@@ -95,6 +99,7 @@ public abstract class AbstractClothingType extends AbstractCoreType {
 
 	private Map<DisplacementType, Map<DisplacementDescriptionType, String>> displacementDescriptionsPlayer;
 	private Map<DisplacementType, Map<DisplacementDescriptionType, String>> displacementDescriptionsNPC;
+	private static final List<AbstractClothingType> theClothes = new ArrayList<>();
 	
 	protected AbstractClothingType(
 			int baseValue,
@@ -235,6 +240,252 @@ public abstract class AbstractClothingType extends AbstractCoreType {
 
 		
 		finalSetUp();
+		theClothes.add(this);
+	}
+	
+	public static List<String> getAllTheXMLs() {
+		List<String> results = new ArrayList<>();
+		for (AbstractClothingType act : theClothes) {
+			results.add(act.printXML());
+		}
+		return results;
+	}
+	
+	private String printXML() {
+		return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+				"<clothing>" +	
+		"<coreAtributes>"+
+			"<value>"+baseValue+"</value>" + 
+			"<determiner><![CDATA["+determiner+"]]></determiner>" +
+			"<name><![CDATA["+name+"]]></name>" + 		
+			"<namePlural pluralByDefault=\""+plural+"\"><![CDATA["+namePlural+"]]></namePlural>"+ 	
+			"<description><![CDATA["+description+"]]></description>" + 
+			"<physicalResistance>"+physicalResistance+"</physicalResistance> " +
+			"<femininity>"+femininityRestriction+"</femininity>" + 
+			"<slot>"+slot+"</slot> "+
+			"<rarity>"+rarity+"</rarity> "+
+			"<clothingSet/> "+
+			"<imageName>"+pathName+"</imageName> "+
+			"<imageEquippedName>"+pathNameEquipped+"</imageEquippedName> "+
+			"<enchantmentLimit/>"+
+			"<effects/>"+
+			getBlockedPartsXML() +
+			"<incompatibleSlots/> "+
+			"<primaryColours values=\"ALL\"/> "+
+			"<primaryColoursDye values=\"ALL\"/>"+
+			"<secondaryColours values=\"ALL\"/>"+
+			"<secondaryColoursDye values=\"ALL\"/>"+
+			"<tertiaryColours values=\"ALL\"/>"+
+			"<tertiaryColoursDye values=\"ALL\"/>"+
+			"<tertiaryColoursDye>"+
+			"	<colour>CLOTHING_WHITE</colour>"+
+			"	<colour>CLOTHING_BLACK</colour>"+
+			"	<colour>CLOTHING_GREY</colour>"+
+			"	<colour>CLOTHING_RED</colour>"+
+			"	<colour>CLOTHING_RED_BRIGHT</colour>"+
+			"	<colour>CLOTHING_RED_DARK</colour>"+
+			"	<colour>CLOTHING_ORANGE</colour>"+
+			"	<colour>CLOTHING_ORANGE_BRIGHT</colour>"+
+			"	<colour>CLOTHING_ORANGE_DARK</colour>"+
+			"	<colour>CLOTHING_BROWN</colour>"+
+			"	<colour>CLOTHING_TAN</colour>"+
+			"	<colour>CLOTHING_YELLOW</colour>"+
+			"	<colour>CLOTHING_GREEN_LIME</colour>"+
+			"	<colour>CLOTHING_GREEN</colour>"+
+			"	<colour>CLOTHING_GREEN_DARK</colour>"+
+			"	<colour>CLOTHING_TURQUOISE</colour>"+
+			"	<colour>CLOTHING_BLUE_LIGHT</colour>"+
+			"	<colour>CLOTHING_BLUE</colour>"+
+			"	<colour>CLOTHING_BLUE_DARK</colour>"+
+			"	<colour>CLOTHING_PURPLE</colour>"+
+			"	<colour>CLOTHING_PURPLE_DARK</colour>"+
+			"	<colour>CLOTHING_PURPLE_LIGHT</colour>"+
+			"	<colour>CLOTHING_PINK</colour>"+
+			"	<colour>CLOTHING_PINK_LIGHT</colour>"+
+			"</tertiaryColoursDye>"+
+			getItemTagsXML()+
+		"</coreAtributes>"+
+			getDisplacementTextXMLs()+
+		getReplacementTextXMLs()+
+		
+	"</clothing>";
+	}
+	
+	private String getBlockedPartsXML() {
+		StringBuilder sb = new StringBuilder("<blockedPartsList>");
+		for (BlockedParts bp : blockedPartsList) {
+			sb.append("<blockedParts>");
+			sb.append("<displacementType>" + bp.displacementType + "</displacementType>");
+			sb.append("<clothingAccessRequired>");
+			for (ClothingAccess ca : bp.clothingAccessRequired) {
+				sb.append("<clothingAccess>"+ca+"</clothingAccess>");
+			}
+			sb.append("</clothingAccessRequired>");
+			sb.append("<blockedBodyParts>");
+			for (CoverableArea bbp : bp.blockedBodyParts) {
+				sb.append("<bodyPart>"+bbp+"</bodyPart>");
+			}
+			sb.append("</blockedBodyParts>");
+			sb.append("<clothingAccessBlocked>");
+			for (ClothingAccess ca : bp.clothingAccessBlocked) {
+				sb.append("<clothingAccess>"+ca+"</clothingAccess>");
+			}
+			sb.append("</clothingAccessBlocked>");
+			sb.append("<concealedSlots>");
+			for (InventorySlot is : bp.concealedSlots) {
+				sb.append("<slot>"+is+"</slot>");
+			}
+			sb.append("</concealedSlots>");
+			sb.append("</blockedParts>");
+		}
+		sb.append("</blockedPartsList>");
+		return sb.toString();
+	}
+	
+	private String getItemTagsXML() {
+		StringBuilder sb = new StringBuilder("<itemTags>");
+		for (ItemTag it : itemTags) {
+			sb.append("<tag>"+it+"</tag>");
+		}
+		sb.append("</itemTags>");
+		return sb.toString();
+	}
+	
+	private String getDisplacementTextXMLs() {
+//		Map<DisplacementDescriptionType, String> displacementsPlayer = new HashMap<>();
+//		displacementsPlayer.put(DisplacementDescriptionType.DISPLACEMENT_SELF, "playerSelf");
+//		displacementsPlayer.put(DisplacementDescriptionType.DISPLACEMENT, "playerNPC");
+//		displacementsPlayer.put(DisplacementDescriptionType.DISPLACEMENT_ROUGH, "playerNPCRough");
+//		Map<DisplacementDescriptionType, String> displacementsNpc = new HashMap<>();
+//		displacementsNpc.put(DisplacementDescriptionType.DISPLACEMENT_SELF, "NPCSelf");
+//		displacementsNpc.put(DisplacementDescriptionType.DISPLACEMENT, "NPCPlayer");
+//		displacementsNpc.put(DisplacementDescriptionType.DISPLACEMENT_ROUGH, "NPCPlayerRough");
+//		displacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_DISPLACEMENT, "NPCOtherNPC");
+//		displacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_DISPLACEMENT_ROUGH, "NPCOtherNPCRough");
+//		
+//		Map<DisplacementDescriptionType, String> replacementsPlayer = new HashMap<>();
+//		replacementsPlayer.put(DisplacementDescriptionType.REPLACEMENT_SELF, "playerSelf");
+//		replacementsPlayer.put(DisplacementDescriptionType.REPLACEMENT, "playerNPC");
+//		replacementsPlayer.put(DisplacementDescriptionType.REPLACEMENT_ROUGH, "playerNPCRough");
+//		Map<DisplacementDescriptionType, String> replacementsNpc = new HashMap<>();
+//		replacementsNpc.put(DisplacementDescriptionType.REPLACEMENT_SELF, "NPCSelf");
+//		replacementsNpc.put(DisplacementDescriptionType.REPLACEMENT, "NPCPlayer");
+//		replacementsNpc.put(DisplacementDescriptionType.REPLACEMENT_ROUGH, "NPCPlayerRough");
+//		replacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT, "NPCOtherNPC");
+//		replacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT_ROUGH, "NPCOtherNPCRough");
+		final AbstractClothingType thiz = this;
+		final PlayerCharacter player = Main.game.getPlayer();
+		final NPC npc1 = Main.game.getNyan();
+		final NPC npc2 = Main.game.getLilaya();
+		
+		List<Function<DisplacementType, String>> displacements = new ArrayList<>();
+		displacements.add(displacementType ->
+			"<playerSelf>"+CDATA(thiz.displaceText(player, player, displacementType, false))+"</playerSelf>");
+		displacements.add(displacementType ->
+		"<playerNPC>"+CDATA(thiz.displaceText(player, player, displacementType, false))+"</playerNPC>");
+		displacements.add(displacementType ->
+		"<playerNPCRough>"+CDATA(thiz.displaceText(npc1, player, displacementType, true))+"</playerNPCRough>");
+		displacements.add(displacementType ->
+		"<NPCSelf>"+CDATA(thiz.displaceText(npc1, npc1, displacementType, false))+"</NPCSelf>");
+		displacements.add(displacementType ->
+		"<NPCPlayer>"+CDATA(thiz.displaceText(player, npc1, displacementType, false))+"</NPCPlayer>");
+		displacements.add(displacementType ->
+		"<NPCPlayerRough>"+CDATA(thiz.displaceText(player, npc1, displacementType, true))+"</NPCPlayerRough>");
+		displacements.add(displacementType ->
+		"<NPCOtherNPC>"+CDATA(thiz.displaceText(npc1, npc2, displacementType, false))+"</NPCOtherNPC>");
+		displacements.add(displacementType ->
+		"<NPCOtherNPCRough>"+CDATA(thiz.displaceText(npc1, npc2, displacementType, true))+"</NPCOtherNPCRough>");
+		
+//			displacementDescriptionsPlayer.get(type).put(DisplacementDescriptionType.REPLACEMENT, equipTextElement.getElementsByTagName("playerNPC").item(0).getTextContent());
+//			displacementDescriptionsPlayer.get(type).put(DisplacementDescriptionType.REPLACEMENT_ROUGH, equipTextElement.getElementsByTagName("playerNPCRough").item(0).getTextContent());
+//			displacementDescriptionsPlayer.get(type).put(DisplacementDescriptionType.REPLACEMENT_SELF, equipTextElement.getElementsByTagName("playerSelf").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.REPLACEMENT, equipTextElement.getElementsByTagName("NPCPlayer").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.REPLACEMENT_ROUGH, equipTextElement.getElementsByTagName("NPCPlayerRough").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.REPLACEMENT_SELF, equipTextElement.getElementsByTagName("NPCSelf").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT, equipTextElement.getElementsByTagName("NPCOtherNPC").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT_ROUGH, equipTextElement.getElementsByTagName("NPCOtherNPCRough").item(0).getTextContent());
+		StringBuilder sb = new StringBuilder();
+		
+		for (DisplacementType dt : DisplacementType.values()) {
+			sb.append("<displacementText type=\""+dt+"\">");
+			for (Function<DisplacementType, String> func : displacements) {
+				sb.append(func.apply(dt));
+			}
+			sb.append("</displacementText>");
+		}
+		
+		return sb.toString();
+	}
+	
+	private String getReplacementTextXMLs() {
+//		Map<DisplacementDescriptionType, String> displacementsPlayer = new HashMap<>();
+//		displacementsPlayer.put(DisplacementDescriptionType.DISPLACEMENT_SELF, "playerSelf");
+//		displacementsPlayer.put(DisplacementDescriptionType.DISPLACEMENT, "playerNPC");
+//		displacementsPlayer.put(DisplacementDescriptionType.DISPLACEMENT_ROUGH, "playerNPCRough");
+//		Map<DisplacementDescriptionType, String> displacementsNpc = new HashMap<>();
+//		displacementsNpc.put(DisplacementDescriptionType.DISPLACEMENT_SELF, "NPCSelf");
+//		displacementsNpc.put(DisplacementDescriptionType.DISPLACEMENT, "NPCPlayer");
+//		displacementsNpc.put(DisplacementDescriptionType.DISPLACEMENT_ROUGH, "NPCPlayerRough");
+//		displacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_DISPLACEMENT, "NPCOtherNPC");
+//		displacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_DISPLACEMENT_ROUGH, "NPCOtherNPCRough");
+//		
+//		Map<DisplacementDescriptionType, String> replacementsPlayer = new HashMap<>();
+//		replacementsPlayer.put(DisplacementDescriptionType.REPLACEMENT_SELF, "playerSelf");
+//		replacementsPlayer.put(DisplacementDescriptionType.REPLACEMENT, "playerNPC");
+//		replacementsPlayer.put(DisplacementDescriptionType.REPLACEMENT_ROUGH, "playerNPCRough");
+//		Map<DisplacementDescriptionType, String> replacementsNpc = new HashMap<>();
+//		replacementsNpc.put(DisplacementDescriptionType.REPLACEMENT_SELF, "NPCSelf");
+//		replacementsNpc.put(DisplacementDescriptionType.REPLACEMENT, "NPCPlayer");
+//		replacementsNpc.put(DisplacementDescriptionType.REPLACEMENT_ROUGH, "NPCPlayerRough");
+//		replacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT, "NPCOtherNPC");
+//		replacementsNpc.put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT_ROUGH, "NPCOtherNPCRough");
+		final AbstractClothingType thiz = this;
+		final PlayerCharacter player = Main.game.getPlayer();
+		final NPC npc1 = Main.game.getNyan();
+		final NPC npc2 = Main.game.getLilaya();
+		
+		List<Function<DisplacementType, String>> displacements = new ArrayList<>();
+		displacements.add(displacementType ->
+			"<playerSelf>"+CDATA(thiz.replaceText(player, player, displacementType, false))+"</playerSelf>");
+		displacements.add(displacementType ->
+		"<playerNPC>"+CDATA(thiz.replaceText(player, player, displacementType, false))+"</playerNPC>");
+		displacements.add(displacementType ->
+		"<playerNPCRough>"+CDATA(thiz.replaceText(npc1, player, displacementType, true))+"</playerNPCRough>");
+		displacements.add(displacementType ->
+		"<NPCSelf>"+CDATA(thiz.replaceText(npc1, npc1, displacementType, false))+"</NPCSelf>");
+		displacements.add(displacementType ->
+		"<NPCPlayer>"+CDATA(thiz.replaceText(player, npc1, displacementType, false))+"</NPCPlayer>");
+		displacements.add(displacementType ->
+		"<NPCPlayerRough>"+CDATA(thiz.replaceText(player, npc1, displacementType, true))+"</NPCPlayerRough>");
+		displacements.add(displacementType ->
+		"<NPCOtherNPC>"+CDATA(thiz.replaceText(npc1, npc2, displacementType, false))+"</NPCOtherNPC>");
+		displacements.add(displacementType ->
+		"<NPCOtherNPCRough>"+CDATA(thiz.replaceText(npc1, npc2, displacementType, true))+"</NPCOtherNPCRough>");
+		
+//			displacementDescriptionsPlayer.get(type).put(DisplacementDescriptionType.REPLACEMENT, equipTextElement.getElementsByTagName("playerNPC").item(0).getTextContent());
+//			displacementDescriptionsPlayer.get(type).put(DisplacementDescriptionType.REPLACEMENT_ROUGH, equipTextElement.getElementsByTagName("playerNPCRough").item(0).getTextContent());
+//			displacementDescriptionsPlayer.get(type).put(DisplacementDescriptionType.REPLACEMENT_SELF, equipTextElement.getElementsByTagName("playerSelf").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.REPLACEMENT, equipTextElement.getElementsByTagName("NPCPlayer").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.REPLACEMENT_ROUGH, equipTextElement.getElementsByTagName("NPCPlayerRough").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.REPLACEMENT_SELF, equipTextElement.getElementsByTagName("NPCSelf").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT, equipTextElement.getElementsByTagName("NPCOtherNPC").item(0).getTextContent());
+//			displacementDescriptionsNPC.get(type).put(DisplacementDescriptionType.NPC_ON_NPC_REPLACEMENT_ROUGH, equipTextElement.getElementsByTagName("NPCOtherNPCRough").item(0).getTextContent());
+		StringBuilder sb = new StringBuilder();
+		
+		for (DisplacementType dt : DisplacementType.values()) {
+			sb.append("<replacementText type=\""+dt+"\">");
+			for (Function<DisplacementType, String> func : displacements) {
+				sb.append(func.apply(dt));
+			}
+			sb.append("</replacementText>");
+		}
+		
+		return sb.toString();
+	}
+	
+	
+	private static String CDATA(String input) {
+		return "<![CDATA["+input+"]]>";
 	}
 	
 	public AbstractClothingType(File clothingXMLFile) {

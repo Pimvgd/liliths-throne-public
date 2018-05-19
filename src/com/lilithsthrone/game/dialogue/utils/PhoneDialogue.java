@@ -497,6 +497,7 @@ public class PhoneDialogue {
 
 		@Override
 		public String getContent() {
+			AbstractClothingType.getAllTheXMLs().forEach(s -> System.out.println(s));
 			UtilText.nodeContentSB.setLength(0);
 			
 			UtilText.nodeContentSB.append(
