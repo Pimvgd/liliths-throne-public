@@ -1,7 +1,7 @@
 package com.lilithsthrone.game.character.body.types;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,9 +67,10 @@ public enum BreastType implements BodyPartTypeInterface {
 
 	@Override
 	public String getDeterminer(GameCharacter gc) {
-		if(gc.getBreastRows()==1) {
+		int breastRows = gc.getBreastRows();
+		if(breastRows == 1) {
 			return "a pair of";
-		} else if(gc.getBreastRows()==2) {
+		} else if(breastRows == 2) {
 			return "two pairs of";
 		} else {
 			return "three pairs of";
@@ -87,10 +88,7 @@ public enum BreastType implements BodyPartTypeInterface {
 			return "pec";
 		}
 		
-		switch(this){
-			default:
-				return UtilText.returnStringAtRandom("breast", "boob", "tit");
-		}
+		return UtilText.returnStringAtRandom("breast", "boob", "tit");
 	}
 	
 	@Override
@@ -99,20 +97,16 @@ public enum BreastType implements BodyPartTypeInterface {
 			return "pecs";
 		}
 		
-		switch(this){
-			default:
-				return UtilText.returnStringAtRandom("breasts", "boobs", "mammaries", "tits");
-		}
+		return UtilText.returnStringAtRandom("breasts", "boobs", "mammaries", "tits");
 	}
 	
 	@Override
 	public String getDescriptor(GameCharacter gc) {
-		if(gc.getBreastSize()==CupSize.FLAT)
+		CupSize breastSize = gc.getBreastSize();
+		if (breastSize == CupSize.FLAT) {
 			return "";
-		switch(this){
-			default:
-				return gc.getBreastSize().getDescriptor();
 		}
+		return breastSize.getDescriptor();
 	}
 	
 	public NippleType getNippleType() {
@@ -121,7 +115,7 @@ public enum BreastType implements BodyPartTypeInterface {
 
 	@Override
 	public BodyCoveringType getBodyCoveringType(Body body) {
-		if(body!=null) {
+		if (body != null) {
 			return body.getSkin().getType().getBodyCoveringType(body);
 		}
 		return skinType;
@@ -174,7 +168,7 @@ public enum BreastType implements BodyPartTypeInterface {
 		return "";
 	}
 	
-	private static Map<Race, List<BreastType>> typesMap = new HashMap<>();
+	private static Map<Race, List<BreastType>> typesMap = new EnumMap<>(Race.class);
 	public static List<BreastType> getBreastTypes(Race r) {
 		if(typesMap.containsKey(r)) {
 			return typesMap.get(r);
